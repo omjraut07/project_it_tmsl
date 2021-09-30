@@ -1,9 +1,13 @@
-import React from 'react';
-import { render } from 'react-dom';
+module.exports = {
+  ...require('./auth'),
+  ...require('./poll'),
+};
 
-import './index.css';
-import App from './containers/App';
-import registerServiceWorker from './registerServiceWorker';
-
-render(<App />, document.getElementById('root'));
-registerServiceWorker();
+module.exports.error = (err, req, res, next) => {
+  return res.status(err.status || 500).json({
+    success: false,
+    error: {
+      message: err.message || 'Something went wrong.',
+    },
+  });
+};
