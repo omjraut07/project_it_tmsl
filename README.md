@@ -1,6 +1,6 @@
 # Vote App
 
-freeCodeCamp Build a Voting App.
+ Building a Voting App.
 
 ## User Stories
 
