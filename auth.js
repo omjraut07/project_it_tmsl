@@ -1,61 +1,26 @@
-const db = require('../models');
 const jwt = require('jsonwebtoken');
 
-// for development only
-exports.getUsers = async (req, res, next) => {
-  try {
-    const users = await db.User.find();
-
-    return res.status(200).json(users);
-  } catch (err) {
-    return next({
-      status: 400,
-      message: err.message,
+module.exports = (req, res, next) => {
+  if (req.headers['authorization']) {
+    const token = req.headers['authorization'].split(' ')[1];
+    jwt.verify(token, process.env.SECRET, (err, decoded) => {
+      if (err) {
+        // res.json({
+        //   success: false,
+        //   message: 'Failed to authenticate token',
+        // });
+        next(Error('Failed to authenticate token'));
+      } else {
+        req.decoded = decoded;
+        next();
+      }
     });
-  }
-};
+  } else {
+    // res.status(403).json({
+    //   status: false,
+    //   message: 'No token provided',
+    // });
 
-exports.register = async (req, res, next) => {
-  try {
-    const user = await db.User.create(req.body);
-    const { id, username } = user;
-    const token = jwt.sign({ id, username }, process.env.SECRET);
-
-    return res.status(201).json({
-      id,
-      username,
-      token,
-    });
-  } catch (err) {
-    if (err.code === 11000) {
-      err.message = 'Sorry, that username is already taken';
-    }
-    return next({
-      status: 400,
-      message: err.message,
-    });
-  }
-};
-
-exports.login = async (req, res, next) => {
-  try {
-    const user = await db.User.findOne({
-      username: req.body.username,
-    });
-    const { id, username } = user;
-    const valid = await user.comparePassword(req.body.password);
-
-    if (valid) {
-      const token = jwt.sign({ id, username }, process.env.SECRET);
-      return res.status(200).json({
-        id,
-        username,
-        token,
-      });
-    } else {
-      throw new Error();
-    }
-  } catch (err) {
-    return next({ status: 400, message: 'Invalid Username/Password' });
+    next(Error('No token provided'));
   }
 };
