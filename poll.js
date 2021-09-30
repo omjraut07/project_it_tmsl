@@ -1,39 +1,18 @@
-const mongoose = require('mongoose');
-const User = require('./user');
+const router = require('express').Router();
+const handle = require('../handlers');
+const auth = require('../middleware/auth');
 
-const optionSchema = new mongoose.Schema({
-  option: String,
-  votes: {
-    type: Number,
-    default: 0,
-  },
-});
+router
+  .route('/')
+  .get(handle.showPolls)
+  .post(auth, handle.createPoll);
 
-const pollSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  created: {
-    type: Date,
-    default: Date.now,
-  },
-  question: String,
-  options: [optionSchema],
-  voted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-});
+router.get('/user', auth, handle.usersPolls);
 
-pollSchema.pre('remove', async function(next) {
-  try {
-    const user = await User.findById(this.user);
-    user.polls = user.polls.filter(
-      poll => poll._id.toString() !== this._id.toString(),
-    );
-    await user.save();
-    return next();
-  } catch (err) {
-    return next(err);
-  }
-});
+router
+  .route('/:id')
+  .get(handle.getPoll)
+  .post(auth, handle.vote)
+  .delete(auth, handle.deletePoll);
 
-module.exports = mongoose.model('Poll', pollSchema);
+module.exports = router;
